@@ -1,16 +1,7 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import TeamEscudo from './TeamEscudo';
 
 export default function TablaPosiciones({ tabla = [] }) {
-  const navigate = useNavigate();
-
-  const handleRowClick = (teamId) => {
-    if (teamId) {
-      navigate(`/equipos/${teamId}`);
-    }
-  };
-
   return (
     <div className="w-full overflow-hidden border border-gris-borde rounded-md bg-superficie">
       <table className="w-full border-collapse text-sm font-inter table-fixed">
@@ -43,8 +34,7 @@ export default function TablaPosiciones({ tabla = [] }) {
           {tabla.map((team, index) => (
             <tr 
               key={team.id || team.nombre} 
-              onClick={() => handleRowClick(team.id || team.nombre)}
-              className="cursor-pointer hover:bg-superficie-destacada/20 transition-all duration-200"
+              className="hover:bg-superficie-destacada/5 transition-all duration-200"
             >
               {/* Posición */}
               <td className="px-1 py-2 md:px-2 md:py-3 text-center text-[10px] md:text-xs font-semibold text-gris-secundario">

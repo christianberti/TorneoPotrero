@@ -118,13 +118,7 @@ export default function PartidoDetalle() {
         <div className="flex items-center justify-between py-4 my-2">
           {/* Local */}
           <div className="w-[38%] flex flex-col items-center gap-3 text-center">
-            {localTeam ? (
-              <Link to={`/equipos/${localTeam.id || localTeam.nombre}`}>
-                <TeamEscudo equipo={localTeam} className="w-16 h-16" textClassName="text-2xl" rounded="rounded-md" padding="p-2" />
-              </Link>
-            ) : (
-              <TeamEscudo equipo={{ nombre: localNombre }} className="w-16 h-16" textClassName="text-2xl" rounded="rounded-md" padding="p-2" />
-            )}
+            <TeamEscudo equipo={localTeam || { nombre: localNombre }} className="w-16 h-16" textClassName="text-2xl" rounded="rounded-md" padding="p-2" />
             <span className="font-montserrat font-bold tracking-wide uppercase text-xs md:text-sm text-blanco">{localNombre}</span>
           </div>
 
@@ -145,13 +139,7 @@ export default function PartidoDetalle() {
 
           {/* Visitante */}
           <div className="w-[38%] flex flex-col items-center gap-3 text-center">
-            {visitanteTeam ? (
-              <Link to={`/equipos/${visitanteTeam.id || visitanteTeam.nombre}`}>
-                <TeamEscudo equipo={visitanteTeam} className="w-16 h-16" textClassName="text-2xl" rounded="rounded-md" padding="p-2" />
-              </Link>
-            ) : (
-              <TeamEscudo equipo={{ nombre: visitanteNombre }} className="w-16 h-16" textClassName="text-2xl" rounded="rounded-md" padding="p-2" />
-            )}
+            <TeamEscudo equipo={visitanteTeam || { nombre: visitanteNombre }} className="w-16 h-16" textClassName="text-2xl" rounded="rounded-md" padding="p-2" />
             <span className="font-montserrat font-bold tracking-wide uppercase text-xs md:text-sm text-blanco">{visitanteNombre}</span>
           </div>
         </div>
