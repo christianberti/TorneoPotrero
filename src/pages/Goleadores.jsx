@@ -3,11 +3,10 @@ import { useTorneoData } from '../hooks/useTorneoData';
 import RankingTable from '../components/ui/RankingTable';
 import JugadorRow from '../components/JugadorRow';
 import FilterTabs from '../components/ui/FilterTabs';
-import { obtenerTorneo } from '../utils/torneo';
 
 export default function Goleadores() {
-  const { jugadores, equipos, loading, error } = useTorneoData();
-  const [activeCategory, setActiveCategory] = useState('Libre');
+  const { goleadores, equipos, loading, error } = useTorneoData();
+  const [activeCategory, setActiveCategory] = useState('Zona A');
 
   if (loading) {
     return (
@@ -16,6 +15,7 @@ export default function Goleadores() {
         <div className="w-[200px] h-8 bg-superficie border border-gris-borde rounded-md skeleton-anim"></div>
         {/* Tabs skeleton */}
         <div className="flex gap-2 pb-2">
+          <div className="w-20 h-8 bg-superficie border border-gris-borde rounded-sm skeleton-anim"></div>
           <div className="w-20 h-8 bg-superficie border border-gris-borde rounded-sm skeleton-anim"></div>
           <div className="w-20 h-8 bg-superficie border border-gris-borde rounded-sm skeleton-anim"></div>
         </div>
@@ -34,35 +34,32 @@ export default function Goleadores() {
     );
   }
 
-  // Filtrar por torneo agrupado (Libre vs +30)
-  const matchesCategory = (player) => {
-    // Buscar equipo del jugador para conocer su zona
-    const team = equipos.find(e => 
-      String(e.id) === String(player.equipo) || 
-      String(e.nombre).trim().toLowerCase() === String(player.equipo).trim().toLowerCase() ||
-      String(e.id) === String(player.equipoId)
-    );
+  // 1. Filtrar, cruzar equipos y parsear goles
+  const filteredGoleadores = (goleadores || [])
+    .filter(row => 
+      String(row.categoria || '').trim().toLowerCase() === activeCategory.trim().toLowerCase()
+    )
+    .map(row => {
+      // Cruzar el equipo_id de la fila con el catálogo global de equipos
+      const team = equipos.find(e => 
+        String(e.id).trim().toLowerCase() === String(row.equipo_id).trim().toLowerCase() ||
+        String(e.nombre).trim().toLowerCase() === String(row.equipo_id).trim().toLowerCase()
+      );
 
-    const rawCat = player.categoria ?? player.categoría ?? team?.categoria ?? team?.categoría ?? '';
-    const torneoGrupo = obtenerTorneo(rawCat);
+      const golesVal = parseInt(row.goles || 0, 10);
 
-    return torneoGrupo.toLowerCase() === activeCategory.toLowerCase();
-  };
-
-  // Filtrar y ordenar jugadores con al menos 1 gol
-  const goleadores = jugadores
-    .filter(j => {
-      const g = parseInt(j.goles ?? j.goleador ?? 0, 10);
-      return !isNaN(g) && g > 0 && matchesCategory(j);
+      return {
+        ...row,
+        nombre: row.jugador || 'Jugador Sin Nombre',
+        teamObj: team,
+        golesParsed: golesVal
+      };
     })
-    .sort((a, b) => {
-      const gA = parseInt(a.goles ?? a.goleador ?? 0, 10);
-      const gB = parseInt(b.goles ?? b.goleador ?? 0, 10);
-      return gB - gA;
-    });
+    .sort((a, b) => b.golesParsed - a.golesParsed);
 
   const categories = [
-    { id: 'Libre', label: 'Libre' },
+    { id: 'Zona A', label: 'Zona A' },
+    { id: 'Zona B', label: 'Zona B' },
     { id: '+30', label: '+30' }
   ];
 
@@ -72,7 +69,7 @@ export default function Goleadores() {
     <div>
       <div className="mb-6">
         <h1 className="font-anton text-3xl tracking-wider text-blanco uppercase mb-1">Goleadores</h1>
-        <p className="font-inter text-xs text-gris-secundario uppercase tracking-wide">Máximos anotadores del torneo.</p>
+        <p className="font-inter text-xs text-gris-secundario uppercase tracking-wide">Máximos anotadores del torneo por zona.</p>
       </div>
 
       <FilterTabs 
@@ -81,28 +78,29 @@ export default function Goleadores() {
         onTabChange={setActiveCategory} 
       />
 
-      <RankingTable 
-        headers={headers}
-        data={goleadores}
-        renderRow={(player, index) => {
-          const team = equipos.find(e => 
-            String(e.id) === String(player.equipo) || 
-            String(e.nombre).trim().toLowerCase() === String(player.equipo).trim().toLowerCase() ||
-            String(e.id) === String(player.equipoId)
-          );
-          const teamName = team ? team.nombre : player.equipo;
+      {filteredGoleadores.length === 0 ? (
+        <p className="text-center text-xs text-gris-secundario italic py-10 border border-dashed border-gris-borde rounded-md bg-superficie mt-4">
+          No hay goleadores registrados para esta zona en el Google Sheet.
+        </p>
+      ) : (
+        <RankingTable 
+          headers={headers}
+          data={filteredGoleadores}
+          renderRow={(player, index) => {
+            const teamName = player.teamObj ? player.teamObj.nombre : player.equipo_id;
 
-          return (
-            <JugadorRow 
-              key={player.id || player.nombre}
-              jugador={player}
-              index={index}
-              teamName={teamName}
-              statValue={player.goles ?? player.goleador ?? 0}
-            />
-          );
-        }}
-      />
+            return (
+              <JugadorRow 
+                key={player.id || player.nombre || index}
+                jugador={player}
+                index={index}
+                teamName={teamName}
+                statValue={player.golesParsed}
+              />
+            );
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,22 +1,27 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useTorneoData } from '../hooks/useTorneoData';
-import { calcularTabla } from '../utils/calcularTabla';
-import PartidoCard from '../components/PartidoCard';
 import Badge from '../components/ui/Badge';
 import TeamEscudo from '../components/TeamEscudo';
 
 export default function EquipoDetalle() {
   const { id } = useParams();
-  const { equipos, jugadores, fixture, resultados, loading, error } = useTorneoData();
+  const { 
+    equipos, 
+    tablaZonaA, 
+    tablaZonaB, 
+    tablaMas30, 
+    loading, 
+    error 
+  } = useTorneoData();
 
   if (loading) {
     return (
       <div className="flex flex-col gap-4">
         {/* Profile Card Skeleton */}
         <div className="w-full h-48 rounded-md bg-superficie border border-gris-borde skeleton-anim"></div>
-        {/* Roster Skeleton */}
-        <div className="w-full h-32 rounded-md bg-superficie border border-gris-borde skeleton-anim"></div>
+        {/* Stats Skeleton */}
+        <div className="w-full h-24 rounded-md bg-superficie border border-gris-borde skeleton-anim"></div>
       </div>
     );
   }
@@ -48,38 +53,31 @@ export default function EquipoDetalle() {
     );
   }
 
-  // Calcular tabla y obtener posición/estadísticas
-  const standings = calcularTabla(equipos, fixture, resultados);
-  const statsIndex = standings.findIndex(s => 
-    String(s.id) === String(team.id) || 
-    String(s.nombre).trim().toLowerCase() === String(team.nombre).trim().toLowerCase()
-  );
-  const stats = statsIndex !== -1 ? standings[statsIndex] : null;
-  const rank = statsIndex !== -1 ? statsIndex + 1 : '-';
+  // 1. Determinar de qué hoja de posiciones buscar según la zona/categoría del equipo
+  const cat = String(team.categoria || team.categoría || '').trim().toLowerCase();
+  let rawStandings = [];
+  if (cat.includes('zona a') || cat === 'a') rawStandings = tablaZonaA || [];
+  else if (cat.includes('zona b') || cat === 'b') rawStandings = tablaZonaB || [];
+  else if (cat.includes('+30') || cat.includes('30')) rawStandings = tablaMas30 || [];
 
-  // Filtrar y ordenar alfabéticamente los jugadores de este equipo
-  const plantel = jugadores
-    .filter(j => 
-      (j.equipoId && String(j.equipoId) === String(team.id)) ||
-      (j.equipo && String(j.equipo).trim().toLowerCase() === String(team.id).trim().toLowerCase()) ||
-      (j.equipo && String(j.equipo).trim().toLowerCase() === String(team.nombre).trim().toLowerCase())
-    )
-    .sort((a, b) => {
-      const nameA = String(a.nombre || '').trim();
-      const nameB = String(b.nombre || '').trim();
-      return nameA.localeCompare(nameB);
-    });
-
-  // Filtrar partidos del equipo
-  const partidosEquipo = fixture.filter(p => 
-    String(p.local) === String(team.id) || 
-    String(p.local).trim().toLowerCase() === String(team.nombre).trim().toLowerCase() ||
-    String(p.visitante) === String(team.id) || 
-    String(p.visitante).trim().toLowerCase() === String(team.nombre).trim().toLowerCase()
+  // 2. Buscar la fila correspondiente al equipo en las posiciones
+  const row = rawStandings.find(r => 
+    String(r.equipo_id).trim().toLowerCase() === String(team.id).trim().toLowerCase() ||
+    String(r.equipo_id).trim().toLowerCase() === String(team.nombre).trim().toLowerCase()
   );
+
+  // 3. Extraer y recalcular estadísticas de las posiciones del Sheet
+  const PJ = row ? parseInt(row.pj || 0, 10) : 0;
+  const PG = row ? parseInt(row.pg || 0, 10) : 0;
+  const PE = row ? parseInt(row.pe || 0, 10) : 0;
+  const PP = row ? parseInt(row.pp || 0, 10) : 0;
+  const GF = row ? parseInt(row.gf || 0, 10) : 0;
+  const GC = row ? parseInt(row.gc || 0, 10) : 0;
+  const PTS = row ? parseInt(row.pts || 0, 10) : 0;
+  const DG = GF - GC; // Recalcular DG
+  const rank = row ? (row.posicion || '') : '';
 
   const delegado = team.delegado || team.contacto || 'No especificado';
-  const telefono = team.telefono || team.teléfono || team.celular || 'No especificado';
 
   return (
     <div className="flex flex-col gap-6">
@@ -91,7 +89,7 @@ export default function EquipoDetalle() {
 
       {/* Perfil de Equipo */}
       <div className="bg-superficie border border-gris-borde rounded-md p-6 flex flex-col items-center text-center gap-4">
-        <TeamEscudo equipo={team} className="w-24 h-24" textClassName="text-3xl" rounded="rounded-md" padding="p-2" />
+        <TeamEscudo equipo={team} className="w-24 h-24" textClassName="text-3xl" />
         
         <div>
           <h1 className="font-anton text-3xl tracking-wider text-blanco uppercase mb-1">{team.nombre}</h1>
@@ -101,110 +99,64 @@ export default function EquipoDetalle() {
             </p>
           )}
           <div className="mt-3 flex gap-2 justify-center">
-            <Badge text={`Posición #${rank}`} type="info" />
+            {rank && <Badge text={`Posición #${rank}`} type="info" />}
             {(team.categoria || team.categoría) && (
               <Badge text={team.categoria || team.categoría} type="default" />
             )}
           </div>
         </div>
 
-        {/* Contacto Delegado */}
+        {/* Contacto Delegado (Sin teléfono) */}
         <div className="mt-2 text-left bg-superficie-destacada border border-gris-borde rounded-sm p-4 w-full max-w-sm flex flex-col gap-2 text-xs font-inter text-gris-secundario">
-          <div><strong className="font-montserrat text-[10px] tracking-wider uppercase text-blanco mr-1">👤 Delegado:</strong> {delegado}</div>
-          <div><strong className="font-montserrat text-[10px] tracking-wider uppercase text-blanco mr-1">📞 Teléfono:</strong> {telefono}</div>
+          <div className="text-center sm:text-left">
+            <strong className="font-montserrat text-[10px] tracking-wider uppercase text-blanco mr-1">👤 Delegado:</strong> {delegado}
+          </div>
         </div>
 
-        {/* Estadísticas de Posición */}
-        {stats && (
-          <div className="grid grid-cols-5 gap-2 w-full max-w-sm mt-2 text-[10px] font-montserrat font-bold text-gris-secundario">
-            <div className="flex flex-col items-center bg-superficie-destacada border border-gris-borde py-1.5 rounded-sm">
-              <span className="font-anton text-sm text-blanco">{stats.PTS}</span>
-              <span className="text-[7px] tracking-widest text-acento">PTS</span>
-            </div>
-            <div className="flex flex-col items-center bg-superficie-destacada border border-gris-borde py-1.5 rounded-sm">
-              <span className="font-anton text-sm text-blanco">{stats.PJ}</span>
-              <span className="text-[7px] tracking-widest text-acento">PJ</span>
-            </div>
-            <div className="flex flex-col items-center bg-superficie-destacada border border-gris-borde py-1.5 rounded-sm">
-              <span className="font-anton text-sm text-blanco">{stats.PG}</span>
-              <span className="text-[7px] tracking-widest text-acento">PG</span>
-            </div>
-            <div className="flex flex-col items-center bg-superficie-destacada border border-gris-borde py-1.5 rounded-sm">
-              <span className="font-anton text-sm text-blanco">{stats.PE}</span>
-              <span className="text-[7px] tracking-widest text-acento">PE</span>
-            </div>
-            <div className="flex flex-col items-center bg-superficie-destacada border border-gris-borde py-1.5 rounded-sm">
-              <span className="font-anton text-sm text-blanco">{stats.PP}</span>
-              <span className="text-[7px] tracking-widest text-acento">PP</span>
-            </div>
+        {/* Estadísticas de Posición Recalculadas */}
+        <div className="w-full max-w-md mt-4 border-t border-gris-borde/40 pt-5">
+          <div className="mb-4 text-center sm:text-left border-b border-gris-borde/40 pb-2">
+            <span className="text-blanco font-montserrat font-bold text-[11px] md:text-xs tracking-widest uppercase">
+              Estadísticas en la Tabla
+            </span>
           </div>
-        )}
-      </div>
 
-      {/* Partidos */}
-      <div>
-        <div className="mb-4 border-b border-gris-borde pb-2">
-          <span className="text-blanco font-montserrat font-bold text-xs md:text-sm tracking-widest uppercase">
-            Partidos
-          </span>
-        </div>
-        {partidosEquipo.length === 0 ? (
-          <p className="text-center text-xs text-gris-secundario italic py-4">No hay partidos programados para este equipo.</p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {partidosEquipo.map((partido, index) => (
-              <PartidoCard 
-                key={partido.id || index} 
-                partido={partido} 
-                resultados={resultados} 
-                equipos={equipos} 
-              />
-            ))}
+          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 w-full text-[10px] font-montserrat font-bold text-gris-secundario">
+            {/* PTS en color negro destacado bg-[#0C0C0C] */}
+            <div className="flex flex-col items-center bg-[#0C0C0C] border border-gris-borde/60 py-2 rounded-sm">
+              <span className="font-anton text-sm text-blanco">{PTS}</span>
+              <span className="text-[7px] tracking-widest text-acento mt-0.5">PTS</span>
+            </div>
+            <div className="flex flex-col items-center bg-superficie-destacada border border-gris-borde py-2 rounded-sm">
+              <span className="font-anton text-sm text-blanco">{PJ}</span>
+              <span className="text-[7px] tracking-widest text-acento mt-0.5">PJ</span>
+            </div>
+            <div className="flex flex-col items-center bg-superficie-destacada border border-gris-borde py-2 rounded-sm">
+              <span className="font-anton text-sm text-blanco">{PG}</span>
+              <span className="text-[7px] tracking-widest text-acento mt-0.5">PG</span>
+            </div>
+            <div className="flex flex-col items-center bg-superficie-destacada border border-gris-borde py-2 rounded-sm">
+              <span className="font-anton text-sm text-blanco">{PE}</span>
+              <span className="text-[7px] tracking-widest text-acento mt-0.5">PE</span>
+            </div>
+            <div className="flex flex-col items-center bg-superficie-destacada border border-gris-borde py-2 rounded-sm">
+              <span className="font-anton text-sm text-blanco">{PP}</span>
+              <span className="text-[7px] tracking-widest text-acento mt-0.5">PP</span>
+            </div>
+            <div className="flex flex-col items-center bg-superficie-destacada border border-gris-borde py-2 rounded-sm">
+              <span className="font-anton text-sm text-blanco">{GF}</span>
+              <span className="text-[7px] tracking-widest text-acento mt-0.5">GF</span>
+            </div>
+            <div className="flex flex-col items-center bg-superficie-destacada border border-gris-borde py-2 rounded-sm">
+              <span className="font-anton text-sm text-blanco">{GC}</span>
+              <span className="text-[7px] tracking-widest text-acento mt-0.5">GC</span>
+            </div>
+            <div className="flex flex-col items-center bg-superficie-destacada border border-gris-borde py-2 rounded-sm">
+              <span className="font-anton text-sm text-blanco">{DG > 0 ? `+${DG}` : DG}</span>
+              <span className="text-[7px] tracking-widest text-acento mt-0.5">DG</span>
+            </div>
           </div>
-        )}
-      </div>
-
-      {/* Plantel */}
-      <div>
-        <div className="mb-4 border-b border-gris-borde pb-2">
-          <span className="text-blanco font-montserrat font-bold text-xs md:text-sm tracking-widest uppercase">
-            Plantel de Jugadores
-          </span>
         </div>
-        {plantel.length === 0 ? (
-          <p className="text-center text-xs text-gris-secundario italic py-4">No hay jugadores registrados en este equipo.</p>
-        ) : (
-          <div className="w-full overflow-x-auto border border-gris-borde rounded-md bg-superficie no-scrollbar">
-            <table className="w-full border-collapse text-sm font-inter min-w-[500px]">
-              <thead>
-                <tr className="border-b border-gris-borde">
-                  <th className="px-4 py-3 bg-fondo text-left text-[10px] font-montserrat font-bold tracking-wider text-gris-secundario uppercase">Nombre</th>
-                  <th className="px-4 py-3 bg-fondo text-left text-[10px] font-montserrat font-bold tracking-wider text-gris-secundario uppercase">Posición</th>
-                  <th className="px-3 py-3 bg-fondo text-center text-[10px] font-montserrat font-bold tracking-wider text-gris-secundario uppercase w-[60px]">Goles</th>
-                  <th className="px-3 py-3 bg-fondo text-center text-[10px] font-montserrat font-bold tracking-wider text-gris-secundario uppercase w-[50px]">🟨</th>
-                  <th className="px-3 py-3 bg-fondo text-center text-[10px] font-montserrat font-bold tracking-wider text-gris-secundario uppercase w-[50px]">🟥</th>
-                  <th className="px-3 py-3 bg-superficie-destacada text-center text-[10px] font-montserrat font-bold tracking-wider text-blanco uppercase w-[60px]">MVP</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gris-borde">
-                {plantel.map((player) => (
-                  <tr key={player.id || player.nombre} className="hover:bg-superficie-destacada/10 transition-colors duration-150">
-                    <td className="px-4 py-3 text-left font-montserrat font-bold tracking-wide uppercase text-xs text-blanco">{player.nombre}</td>
-                    <td className="px-4 py-3 text-left text-xs text-gris-secundario">{player.posicion || 'N/A'}</td>
-                    <td className="px-3 py-3 text-center text-xs font-semibold text-blanco">{player.goles || 0}</td>
-                    <td className="px-3 py-3 text-center text-xs text-gris-secundario">{player.amarillas || 0}</td>
-                    <td className={`px-3 py-3 text-center text-xs font-bold ${player.rojas > 0 ? 'text-alerta' : 'text-gris-secundario'}`}>
-                      {player.rojas || 0}
-                    </td>
-                    <td className="px-3 py-3 text-center bg-superficie-destacada font-anton text-base text-blanco border-l border-gris-borde/30">
-                      {player.mvps || player.mvp || 0}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </div>
   );

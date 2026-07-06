@@ -1,16 +1,15 @@
-# Resumen de Cambios: Preservación de Orden Fijo desde Google Sheets
+# Resumen de Cambios: Simplificación del Fixture de Hojas de Zona
 
-Hemos corregido la visualización de la clasificación para respetar de manera estricta el orden y las posiciones definidas de forma manual por el usuario en las hojas del Google Sheet.
+Hemos adecuado el cargador y la interfaz del Fixture para adaptarse a la estructura simplificada sin identificadores de fila ni columnas de estado de partido.
 
 ## Modificaciones Realizadas
 
-1. **Eliminación del Ordenamiento Dinámico en el Frontend**:
-   - Se removió la llamada `.sort(...)` en `Tabla.jsx` y `Home.jsx` al mapear los registros de las hojas `TablaZonaA`, `TablaZonaB` y `TablaMas30`.
-   - La aplicación ahora lista a los equipos **exactamente en el mismo orden de filas en el que llegan desde el Google Sheet**, permitiendo al administrador del torneo controlar la lógica de desempates e índices de manera manual en la planilla.
+1. **Mapeo Robusto del Fixture (`useTorneoData.jsx`)**:
+   - Se actualizó el mapeador del fixture para generar identificadores virtuales únicos basados en el nombre de la zona, el número de la fecha y el índice de fila (`${zone}-${f.fecha_numero}-${idx}`).
+   - La propiedad `jugado` se establece de manera predeterminada en `false` debido a la ausencia de esa columna en las nuevas hojas simplificadas.
 
-2. **Visualización de la Columna `posicion` del Sheet**:
-   - Mapeado el campo `posicion` directo desde la fila del Sheet.
-   - Modificados `TablaPosiciones.jsx` y `Home.jsx` para mostrar `team.posicion` si está definida en la fila correspondiente de la planilla, cayendo en el índice físico de la fila (`index + 1`) únicamente si el campo viene vacío.
+2. **Renderizado Seguro con Keys de React (`Fixture.jsx`)**:
+   - En el listado de partidos por fecha de la página `Fixture.jsx`, se modificó la propiedad `key` del componente `Card` para utilizar de manera explícita el índice de la fila (`pIdx`) del mapeo interno del grupo, eliminando cualquier expectativa o dependencia con un campo `id` proveniente del Google Sheet.
 
 ## Verificación
 

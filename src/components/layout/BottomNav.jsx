@@ -53,7 +53,7 @@ export default function BottomNav() {
           onClick={handleCloseMenu}
         >
           <span className="text-base">🏆</span>
-          <span>Tabla</span>
+          <span>Tablas</span>
         </Link>
         <Link 
           to="/equipos" 

@@ -1,4 +1,5 @@
 import React from 'react';
+import TeamEscudo from './TeamEscudo';
 
 export default function JugadorRow({ jugador, index, teamName = '', statValue, showTeam = true }) {
   return (
@@ -16,7 +17,18 @@ export default function JugadorRow({ jugador, index, teamName = '', statValue, s
       </td>
       {showTeam && (
         <td className="px-4 py-3 text-left text-xs text-gris-secundario">
-          {teamName || jugador.equipo || 'Independiente'}
+          <div className="flex items-center gap-1.5">
+            {jugador.teamObj && (
+              <TeamEscudo 
+                equipo={jugador.teamObj} 
+                className="w-4 h-4 flex-shrink-0" 
+                textClassName="text-[6px]" 
+              />
+            )}
+            <span className="font-montserrat font-semibold uppercase text-[10px] md:text-xs text-gris-secundario">
+              {teamName || jugador.equipo || 'Independiente'}
+            </span>
+          </div>
         </td>
       )}
       <td className="px-4 py-3 text-center bg-superficie-destacada font-anton text-base text-blanco w-[80px] border-l border-gris-borde/30">

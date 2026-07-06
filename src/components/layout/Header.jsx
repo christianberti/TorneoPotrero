@@ -17,7 +17,7 @@ export default function Header() {
           {[
             { path: '/', label: 'Inicio' },
             { path: '/fixture', label: 'Fixture' },
-            { path: '/tabla', label: 'Tabla' },
+            { path: '/tabla', label: 'Tablas' },
             { path: '/equipos', label: 'Equipos' },
             { path: '/goleadores', label: 'Estadísticas' },
             { path: '/reglamento', label: 'Reglamento' },

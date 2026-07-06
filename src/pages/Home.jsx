@@ -9,11 +9,10 @@ import TeamEscudo from '../components/TeamEscudo';
 export default function Home() {
   const { 
     equipos, 
-    fixture, 
-    resultados, 
     tablaZonaA, 
     tablaZonaB, 
     tablaMas30, 
+    proximaFecha,
     loading, 
     error 
   } = useTorneoData();
@@ -68,37 +67,6 @@ export default function Home() {
     );
   }
 
-  // Helper para extraer el número de la fecha (ej: "Fecha 1" -> 1)
-  const getFechaNumber = (fechaStr) => {
-    if (!fechaStr) return 999;
-    const num = parseInt(String(fechaStr).replace(/\D/g, ''), 10);
-    return isNaN(num) ? 999 : num;
-  };
-
-  // Determinar partidos jugados
-  const partidosConEstado = fixture.map(partido => {
-    const res = resultados.find(r => 
-      (r.partidoId && String(r.partidoId) === String(partido.id)) ||
-      (r.id && String(r.id) === String(partido.id)) ||
-      (String(r.local || r.equipoLocal).trim().toLowerCase() === String(partido.local).trim().toLowerCase() && 
-       String(r.visitante || r.equipoVisitante).trim().toLowerCase() === String(partido.visitante).trim().toLowerCase() && 
-       String(r.fecha || '').trim() === String(partido.fecha || '').trim())
-    );
-
-    let jugadoCol = false;
-    if (partido.jugado !== undefined && partido.jugado !== null) {
-      const val = String(partido.jugado).trim().toLowerCase();
-      if (val === 'si') jugadoCol = true;
-      if (val === 'no') jugadoCol = false;
-    } else {
-      const gl = partido.golesLocal ?? partido.goles_local ?? partido.golesL;
-      const gv = partido.golesVisitante ?? partido.goles_visitante ?? partido.golesV;
-      jugadoCol = gl !== undefined && gv !== undefined && gl !== null && gv !== null && gl !== '' && gv !== '' && !isNaN(parseInt(gl, 10)) && !isNaN(parseInt(gv, 10));
-    }
-
-    return { ...partido, jugado: !!res || jugadoCol };
-  });
-
   // Categorías fijas de la app
   const zonas = ['Zona A', 'Zona B', '+30'];
 
@@ -135,36 +103,11 @@ export default function Home() {
     });
   };
 
-  // Obtener zona del partido según el equipo local
-  const getMatchZone = (partido) => {
-    const localTeam = equipos.find(e => 
-      String(e.id) === String(partido.local) || 
-      String(e.nombre).trim().toLowerCase() === String(partido.local).trim().toLowerCase()
+  // Obtener partidos de la próxima fecha desde la hoja ProximaFecha
+  const getNextMatchesForZone = (zoneName) => {
+    return (proximaFecha || []).filter(row => 
+      String(row.zona).trim().toLowerCase() === zoneName.trim().toLowerCase()
     );
-    return localTeam?.categoria ?? localTeam?.categoría ?? '';
-  };
-
-  // Obtener todos los partidos de la próxima fecha sin jugar para una zona
-  const getNextRoundMatchesForZone = (zoneName) => {
-    // 1. Filtrar partidos pendientes de esta zona
-    const pendientesZona = partidosConEstado.filter(p => {
-      if (p.jugado) return false;
-      const matchZone = getMatchZone(p);
-      return String(matchZone).trim().toLowerCase() === zoneName.trim().toLowerCase();
-    });
-
-    if (pendientesZona.length === 0) return [];
-
-    // 2. Encontrar la fecha mínima (más cercana) que tenga partidos pendientes
-    const unplayedRounds = pendientesZona.map(p => getFechaNumber(p.fecha));
-    const nextRoundNum = Math.min(...unplayedRounds);
-
-    // 3. Devolver todos los partidos de esa fecha para la zona
-    return partidosConEstado.filter(p => {
-      const matchZone = getMatchZone(p);
-      const isSameZone = String(matchZone).trim().toLowerCase() === zoneName.trim().toLowerCase();
-      return isSameZone && getFechaNumber(p.fecha) === nextRoundNum;
-    });
   };
 
   return (
@@ -294,7 +237,7 @@ export default function Home() {
         <div className="relative">
           <div className="flex flex-col md:grid md:grid-cols-3 gap-4">
             {zonas.map((zona, idx) => {
-              const zoneMatches = getNextRoundMatchesForZone(zona);
+              const zoneMatches = getNextMatchesForZone(zona);
               const isActive = activeMatchesIndex === idx;
 
               return (
@@ -313,7 +256,7 @@ export default function Home() {
 
                       {zoneMatches.length > 0 && (
                         <div className="text-[9px] font-montserrat font-bold tracking-wider text-gris-secundario uppercase mb-3 mt-1.5">
-                          {zoneMatches[0].fecha}
+                          {zoneMatches[0].titulo_fecha}
                         </div>
                       )}
 
@@ -324,16 +267,16 @@ export default function Home() {
                         <div className="flex flex-col divide-y divide-gris-borde/20">
                           {zoneMatches.map((partido, pIdx) => {
                             const localT = equipos.find(e => 
-                              String(e.id) === String(partido.local) || 
-                              String(e.nombre).trim().toLowerCase() === String(partido.local).trim().toLowerCase()
+                              String(e.id).trim().toLowerCase() === String(partido.equipo_local_id).trim().toLowerCase() ||
+                              String(e.nombre).trim().toLowerCase() === String(partido.equipo_local_id).trim().toLowerCase()
                             );
                             const visitanteT = equipos.find(e => 
-                              String(e.id) === String(partido.visitante) || 
-                              String(e.nombre).trim().toLowerCase() === String(partido.visitante).trim().toLowerCase()
+                              String(e.id).trim().toLowerCase() === String(partido.equipo_visitante_id).trim().toLowerCase() ||
+                              String(e.nombre).trim().toLowerCase() === String(partido.equipo_visitante_id).trim().toLowerCase()
                             );
                             
-                            const localN = localT?.nombre || partido.local;
-                            const visitanteN = visitanteT?.nombre || partido.visitante;
+                            const localN = localT?.nombre || partido.equipo_local_id;
+                            const visitanteN = visitanteT?.nombre || partido.equipo_visitante_id;
 
                             return (
                               <div key={partido.id || pIdx} className="py-2.5 flex flex-col gap-1">
@@ -354,9 +297,9 @@ export default function Home() {
                                   </div>
                                 </div>
 
-                                {/* Horario / Cancha */}
+                                {/* Horario */}
                                 <div className="text-center text-[8px] font-montserrat font-semibold tracking-wider text-gris-secundario uppercase mt-0.5">
-                                  {partido.hora ? `⏰ ${partido.hora} hs` : ''} {partido.cancha ? `| 📍 Cancha: ${partido.cancha}` : ''}
+                                  {partido.hora ? `⏰ ${partido.hora} hs` : ''}
                                 </div>
                               </div>
                             );

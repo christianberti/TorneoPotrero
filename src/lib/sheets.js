@@ -26,8 +26,16 @@ export async function getJugadores() {
   return fetchSheetData('Jugadores');
 }
 
-export async function getFixture() {
-  return fetchSheetData('Fixture');
+export async function getFixtureZonaA() {
+  return fetchSheetData('FixtureZonaA');
+}
+
+export async function getFixtureZonaB() {
+  return fetchSheetData('FixtureZonaB');
+}
+
+export async function getFixtureMas30() {
+  return fetchSheetData('FixtureMas30');
 }
 
 export async function getResultados() {
@@ -48,4 +56,12 @@ export async function getTablaZonaB() {
 
 export async function getTablaMas30() {
   return fetchSheetData('TablaMas30');
+}
+
+export async function getProximaFecha() {
+  return fetchSheetData('ProximaFecha');
+}
+
+export async function getGoleadores() {
+  return fetchSheetData('Goleadores');
 }
