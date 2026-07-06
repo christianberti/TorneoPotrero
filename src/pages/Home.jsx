@@ -229,7 +229,7 @@ export default function Home() {
       <div>
         <div className="mb-6 border-b border-gris-borde pb-2">
           <span className="text-blanco font-montserrat font-bold text-xs md:text-sm tracking-widest uppercase">
-            Próximos Partidos por Zona
+            Próximos Partidos
           </span>
         </div>
 
@@ -239,6 +239,16 @@ export default function Home() {
             {zonas.map((zona, idx) => {
               const zoneMatches = getNextMatchesForZone(zona);
               const isActive = activeMatchesIndex === idx;
+
+              // Helper local para formatear el título de la fecha (ej: "3" -> "FECHA 3")
+              const formatFechaTitle = (title) => {
+                if (!title) return '';
+                const str = String(title).trim();
+                if (str.toLowerCase().startsWith('fecha')) {
+                  return str.toUpperCase();
+                }
+                return `FECHA ${str}`.toUpperCase();
+              };
 
               return (
                 <div 
@@ -256,7 +266,7 @@ export default function Home() {
 
                       {zoneMatches.length > 0 && (
                         <div className="text-[9px] font-montserrat font-bold tracking-wider text-gris-secundario uppercase mb-3 mt-1.5">
-                          {zoneMatches[0].titulo_fecha}
+                          {formatFechaTitle(zoneMatches[0].titulo_fecha)}
                         </div>
                       )}
 
@@ -266,17 +276,25 @@ export default function Home() {
                       ) : (
                         <div className="flex flex-col divide-y divide-gris-borde/20">
                           {zoneMatches.map((partido, pIdx) => {
+                            // Soporte robusto de claves con fallback para equipo local/visitante
+                            const rawLocal = partido.equipo_local_id || partido.equipo_local || partido.local || '';
+                            const rawVisitante = partido.equipo_visitante_id || partido.equipo_visitante || partido.visitante || '';
+
                             const localT = equipos.find(e => 
-                              String(e.id).trim().toLowerCase() === String(partido.equipo_local_id).trim().toLowerCase() ||
-                              String(e.nombre).trim().toLowerCase() === String(partido.equipo_local_id).trim().toLowerCase()
+                              rawLocal && (
+                                String(e.id).trim().toLowerCase() === String(rawLocal).trim().toLowerCase() ||
+                                String(e.nombre).trim().toLowerCase() === String(rawLocal).trim().toLowerCase()
+                              )
                             );
                             const visitanteT = equipos.find(e => 
-                              String(e.id).trim().toLowerCase() === String(partido.equipo_visitante_id).trim().toLowerCase() ||
-                              String(e.nombre).trim().toLowerCase() === String(partido.equipo_visitante_id).trim().toLowerCase()
+                              rawVisitante && (
+                                String(e.id).trim().toLowerCase() === String(rawVisitante).trim().toLowerCase() ||
+                                String(e.nombre).trim().toLowerCase() === String(rawVisitante).trim().toLowerCase()
+                              )
                             );
                             
-                            const localN = localT?.nombre || partido.equipo_local_id;
-                            const visitanteN = visitanteT?.nombre || partido.equipo_visitante_id;
+                            const localN = localT?.nombre || rawLocal;
+                            const visitanteN = visitanteT?.nombre || rawVisitante;
 
                             return (
                               <div key={partido.id || pIdx} className="py-2.5 flex flex-col gap-1">
