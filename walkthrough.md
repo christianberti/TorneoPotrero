@@ -1,13 +1,15 @@
-# Resumen de Cambios: Reversión de Filtros en Goleadores (Libre / +30)
+# Resumen de Cambios: Limpieza y Ajustes Visuales en Filas de Líderes
 
-Hemos regresado al filtrado de máximos goleadores por torneo (Libre y +30) para adecuarse a la carga de datos del Google Sheet.
+Hemos optimizado el componente `JugadorRow` para simplificar la información presentada y reducir el tamaño de fuentes del valor estadístico principal en dispositivos móviles.
 
 ## Modificaciones Realizadas
 
-1. **Reversión de Categorías de Filtro (`Goleadores.jsx`)**:
-   - Se configuró el estado inicial de selección en `'Libre'`.
-   - Se redefinieron las opciones del componente `FilterTabs` a: **Libre** y **+30**.
-   - Los registros de la hoja de cálculo se filtran de manera directa comparando la columna `categoria` con estas dos agrupaciones globales, manteniendo el orden de goles descendente y cruce de equipos.
+1. **Remoción de Subtexto de Posición (`JugadorRow.jsx`)**:
+   - Se eliminó el bloque de renderizado condicional que pintaba la propiedad `posicion` (índice de ranking) como texto secundario debajo del nombre del jugador. Ahora, el nombre se presenta de forma limpia en una única línea.
+
+2. **Ajuste de Escala del Valor Estadístico (`JugadorRow.jsx`)**:
+   - Se cambió la clase de tamaño de fuente del número del récord (goles/tarjetas) de `text-base` a `text-sm md:text-base`.
+   - Esto reduce en al menos 2px la tipografía del valor en dispositivos móviles, previniendo que se vea excesivamente grande y mejorando el balance visual para dar mayor protagonismo al nombre del futbolista.
 
 ## Verificación
 

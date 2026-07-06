@@ -9,11 +9,6 @@ export default function JugadorRow({ jugador, index, teamName = '', statValue, s
         <span className="font-montserrat font-bold tracking-wide uppercase text-xs text-blanco">
           {jugador.nombre || 'Jugador Sin Nombre'}
         </span>
-        {jugador.posicion && (
-          <span className="block text-[9px] text-gris-secundario font-inter mt-0.5">
-            {jugador.posicion}
-          </span>
-        )}
       </td>
       {showTeam && (
         <td className="px-4 py-3 text-left text-xs text-gris-secundario">
@@ -31,7 +26,7 @@ export default function JugadorRow({ jugador, index, teamName = '', statValue, s
           </div>
         </td>
       )}
-      <td className="px-4 py-3 text-center bg-superficie-destacada font-anton text-base text-blanco w-[80px] border-l border-gris-borde/30">
+      <td className="px-4 py-3 text-center bg-superficie-destacada font-anton text-sm md:text-base text-blanco w-[80px] border-l border-gris-borde/30">
         {statValue ?? 0}
       </td>
     </tr>
