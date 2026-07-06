@@ -317,7 +317,7 @@ export default function Home() {
 
                                 {/* Horario */}
                                 <div className="text-center text-[8px] font-montserrat font-semibold tracking-wider text-gris-secundario uppercase mt-0.5">
-                                  {partido.hora ? `⏰ ${partido.hora} hs` : ''}
+                                  {partido.hora ? `${partido.hora} hs` : ''}
                                 </div>
                               </div>
                             );
