@@ -6,7 +6,7 @@ import FilterTabs from '../components/ui/FilterTabs';
 
 export default function Goleadores() {
   const { goleadores, equipos, loading, error } = useTorneoData();
-  const [activeCategory, setActiveCategory] = useState('Zona A');
+  const [activeCategory, setActiveCategory] = useState('Libre');
 
   if (loading) {
     return (
@@ -58,8 +58,7 @@ export default function Goleadores() {
     .sort((a, b) => b.golesParsed - a.golesParsed);
 
   const categories = [
-    { id: 'Zona A', label: 'Zona A' },
-    { id: 'Zona B', label: 'Zona B' },
+    { id: 'Libre', label: 'Libre' },
     { id: '+30', label: '+30' }
   ];
 
